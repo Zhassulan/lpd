@@ -43,28 +43,40 @@ public class PrintUtil {
 	 * @param printer - Printer to send PDF to, if this is null use default printer
 	 */
 	public void printPDF(File filename, String printer) throws LPDException {
+		
 		final String METHOD_NAME = "printPDF(): ";
 		//final String ACROBAT = ConfigResources.getProperty(Constants.ACROREAD_PROGRAM);
 		final String ACROBAT = PropsManager.getInstance().getProperty(Constants.ACROREAD_PROGRAM);
+		/*
 		if(!filename.exists()) {
 			throw new LPDException(METHOD_NAME + filename.getAbsolutePath() + " does not exist.");
 		} else if(StringUtil.isEmpty(printer)) {
-			log.info(METHOD_NAME + "Printer string was empty.");
-			log.info(METHOD_NAME + "Using default printer.");
+			//log.info(METHOD_NAME + "Printer string was empty.");
+			//log.info(METHOD_NAME + "Using default printer.");
 			printer = "";
 		}
-		
+		*/
+		//TODO Печать на определённый принтер
+		printer = "\"" + printer + "\"";		
 		//String command = CMD + "\"" + ACROBAT + "\"" + " /t " + filename.getAbsolutePath() + " " + printer;
-		String command = CMD + "\"" + ACROBAT + "\"" + " /p /h " + filename.getAbsolutePath() + " " + printer;
+		//String command = CMD + "\"" + ACROBAT + "\"" + " /p /h " + filename.getAbsolutePath() + " " + printer;
+		//String command = CMD + "\"" + ACROBAT + "\"" + " /p /h " + Parser.getInstance().pdfPath + " " + printer;
+		String command = null;
+		//if (Parser.getInstance().pdfPath  != null)
+			command = "\"" + ACROBAT + "\" /t " + Parser.getInstance().pdfPath + " " + printer;
+		//else command = "\"" + ACROBAT + "\" /t " + filename.getAbsolutePath() + " " + printer;
+		
 		log.debug(METHOD_NAME + "About to try:" + command);
 		Runtime runtime = Runtime.getRuntime();
 		try {
-			Process pid = runtime.exec(command);
-			int returnValue = pid.waitFor();
-			if(0 == returnValue) {
-				log.debug(METHOD_NAME + "Process successfully completed.");
-			} else {
-				log.warn(METHOD_NAME + "Process terminated abnomally, with an exit code of: " + returnValue);
+			if (Parser.getInstance().pdfPath != null)	{
+				Process pid = runtime.exec(command);
+				int returnValue = pid.waitFor();
+				if(0 == returnValue) {
+					log.debug(METHOD_NAME + "Process successfully completed.");
+				} else {
+					log.warn(METHOD_NAME + "Process terminated abnomally, with an exit code of: " + returnValue);
+				}	
 			}
 		} catch(InterruptedException e) {
 			log.error(METHOD_NAME + e.getMessage(), e);
@@ -75,6 +87,8 @@ public class PrintUtil {
 			throw new LPDException(METHOD_NAME + e.getMessage());
 		}
 	}
+
+	
 
 	/**
 	 * This version takes the byte[] passed in and creates a temporary file.

@@ -1,17 +1,9 @@
 package org.simoes.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,34 +11,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.pdf.PDFParser;
-import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.parser.txt.CharsetDetector;
-import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
 import org.ghost4j.converter.ConverterException;
 import org.ghost4j.converter.PDFConverter;
 import org.ghost4j.document.DocumentException;
 import org.ghost4j.document.PSDocument;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
@@ -59,17 +29,54 @@ import org.simoes.lpd.LPD;
  */
 public class Parser {
 	
-	public static Logger logger = LogManager.getLogger(LPD.class);
-	public static final String htmlEncoding = "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />";
-	private List <Object> listFilesForCallisto = new ArrayList();
+	private static volatile Parser _instance = null;
 	
-    private boolean parsePsToPdf(byte [] bFile, String psFileDest, String pdfFileDest)	{
+	private String fromHost;
+	public static String pdfPath;
+	public static String printer;
+	public File psFile;
+	private List <String> imgList = new ArrayList <String> ();
+	
+	public static Logger logger = LogManager.getLogger(LPD.class);
+	
+	public static synchronized Parser getInstance() {
+        if (_instance == null)
+        	 synchronized (Parser.class) {
+                 if (_instance == null)
+                     _instance = new Parser();
+             }
+        return _instance;
+    }
+	
+	private File createFileFromBytes(byte [] bFile, String filePath)	{
+		 try {
+        	//извлечение имени файла из полного пути
+        	Path path = Paths.get(filePath);
+        	Files.write(path, bFile);
+        	File file = new File(filePath);
+			logger.info("Создан файл " + filePath);
+			return file;
+				
+			} catch (FileNotFoundException e) {
+				logger.error(e.getMessage(), e);
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
+		 return null;
+	}
+	
+    private boolean parsePsToPdf(String pdfFileDest)	{
     	//load PostScript document
         PSDocument document = new PSDocument();
         try {
+        	/*
+        	//извлечение имени файла из полного пути
         	Path path = Paths.get(psFileDest);
         	Files.write(path, bFile);
-			document.load(new File(psFileDest));
+        	File psFile = new File(psFileDest);
+        	*/
+			document.load(psFile);
+			
 		} catch (FileNotFoundException e) {
 			logger.error(e.getMessage(), e);
 		} catch (IOException e) {
@@ -80,20 +87,21 @@ public class Parser {
         FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(new File(pdfFileDest));
-			logger.info("Создан PS файл " + pdfFileDest);
 		} catch (FileNotFoundException e) {
 			logger.error(e.getMessage(), e);
 		}
      
         //create converter
         PDFConverter converter = new PDFConverter();
-     
+        converter.setMaxProcessCount(2);
+        
         //set options
         converter.setPDFSettings(PDFConverter.OPTION_PDFSETTINGS_PREPRESS);
      
         //convert
         try {
 			converter.convert(document, fos);
+			logger.info("Создан PDF файл " + pdfFileDest);
 			return true;
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
@@ -102,11 +110,16 @@ public class Parser {
 		} catch (DocumentException e) {
 			logger.error(e.getMessage(), e);
 		} finally{
-			IOUtils.closeQuietly(fos);
+			try {
+				fos.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
 		}
         return false;
     }
     
+    /*
     private String detectCharset(String filePath)	{
     	Path path = Paths.get(filePath);
     	CharsetDetector charDetect = new CharsetDetector();
@@ -119,50 +132,28 @@ public class Parser {
 		logger.info("charset: " + charSet);
 		return charSet;
     }
-
-    
-    private String parsePdfToHTML(String filePath) throws IOException, SAXException, TikaException {
-        ContentHandler handler = new ToXMLContentHandler();
+     */
+    /*
+    private String parsePdfToHTML(String filePath)	{
+    	ContentHandler handler = new ToXMLContentHandler();
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        InputStream is = new FileInputStream(filePath);
-        parser.parse(is, handler, metadata);
-        return handler.toString();
-    }	
-    
-    private String convertToHtml(byte [] bFile)	{
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-	    SAXTransformerFactory factory = (SAXTransformerFactory)
-	     SAXTransformerFactory.newInstance();
-	    TransformerHandler handler = null;
+        metadata.set(Metadata.CONTENT_TYPE, "application/pdf");	
+        //metadata.set(Metadata.CONTENT_ENCODING, "UTF-8");
+        InputStream is = null;
 		try {
-			handler = factory.newTransformerHandler();
-		} catch (TransformerConfigurationException e) {
+			is = new FileInputStream(filePath);
+		} catch (FileNotFoundException e) {
 			logger.error(e.getMessage(), e);
 		}
-	    handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-	    handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-	    handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-	    handler.setResult(new StreamResult(out));
-	    ExpandedTitleContentHandler handler1 = new ExpandedTitleContentHandler(handler);
-	    AutoDetectParser parser = new AutoDetectParser();
-	    try {
-			parser.parse(new ByteArrayInputStream(bFile), handler1, new Metadata());
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-		} catch (SAXException e) {
-			logger.error(e.getMessage(), e);
-		} catch (TikaException e) {
+        try {
+			parser.parse(is, handler, metadata);
+		} catch (IOException | SAXException | TikaException e) {
 			logger.error(e.getMessage(), e);
 		}
-	    try {
-			return new String(out.toByteArray(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			logger.error(e.getMessage(), e);
-		}
-	    return null;
+        return handler.toString();
     }
-    
+    */
     /**метод извлечения картинок в JPG из PDF файла и записи их на диск 
      * названия идут такие image01.jpg, image0x.jpg
      * @param content
@@ -172,46 +163,7 @@ public class Parser {
      * @throws SAXException
      * @throws TikaException
      */
-    private ContentHandler parsePdfToJpg(byte[] content, final String destPath)throws IOException, SAXException, TikaException{           
-    	
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        ContentHandler handler =   new ToXMLContentHandler();
-        PDFParser parser = new PDFParser(); 
-
-        PDFParserConfig config = new PDFParserConfig();
-        config.setExtractInlineImages(true);
-        config.setExtractUniqueInlineImagesOnly(true);
-
-        parser.setPDFParserConfig(config);
-
-
-        EmbeddedDocumentExtractor embeddedDocumentExtractor = 
-                new EmbeddedDocumentExtractor() {
-            @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
-                return true;
-            }
-            @Override
-            public void parseEmbedded(InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
-                    throws SAXException, IOException {
-                Path outputFile = new File(destPath + metadata.get(Metadata.RESOURCE_NAME_KEY)).toPath();
-                Files.copy(stream, outputFile);
-            }
-        };
-
-        context.set(PDFParser.class, parser);
-        context.set(EmbeddedDocumentExtractor.class,embeddedDocumentExtractor );
-
-        try (InputStream stream = new ByteArrayInputStream(content)) {
-            parser.parse(stream, handler, metadata, context);
-        }	catch (Exception e)	{
-        	logger.error("Похоже что нет картинок в PDF. " + e.getMessage(), e);
-        }
-
-        return handler;
-    }
-    
+    /*
     private ContentHandler parsePdfToJpg(String pdfFileDest, final String destPath)throws IOException, SAXException, TikaException{           
     	
         Metadata metadata = new Metadata();
@@ -222,6 +174,7 @@ public class Parser {
         PDFParserConfig pdfConfig = new PDFParserConfig();
         pdfConfig.setExtractInlineImages(true);
         pdfConfig.setExtractUniqueInlineImagesOnly(true);
+        
         
         parser.setPDFParserConfig(pdfConfig);
 
@@ -251,11 +204,22 @@ public class Parser {
 
         return handler;
     }
+    */
+    public static String getFileNameFromFullPath(String fullPath)	{
+    	File f = new File(fullPath);
+    	return f.getName(); 
+    }
 
 	public void startParse(byte [] bFile, String fromHost, String fileName)	{
+		this.fromHost = fromHost;
+		pdfPath = null;
+		//JPrint.getInstance().findMappedPrinter();
+		printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+		logger.info("Поступил файл на обработку: " + fileName);
+		fileName = getFileNameFromFullPath(fileName);
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss");
 		LocalDateTime now = LocalDateTime.now();
-		String tmpDir = PropsManager.getInstance().getProperty("TEMP_DIR"); 		
+		String tmpDir = PropsManager.getInstance().getProperty("STORAGE"); 	
 		String destPath = tmpDir + fromHost + "/" + dtf.format(now) + "/";
 		Path path = Paths.get(destPath);
 		try {
@@ -264,46 +228,52 @@ public class Parser {
 			logger.error(e.getMessage(), e);
 		}
 		
-		fileName = destPath + fileName;
-		String psFileDest = fileName + ".pjb";
-		String pdfFileDest = fileName + ".pdf";
-		String htmlFileDest = fileName + ".html";
-		Parser parser = new Parser();
-		String html = null;
+		String psFileDest = destPath + fileName + ".pjb";
+		psFile = createFileFromBytes(bFile, psFileDest);
 		
-		//logger.info("Кодировка системы " + System.getProperty("file.encoding"));
-		if (parser.parsePsToPdf(bFile, psFileDest, pdfFileDest))	{
-			logger.info("успешная конвертация " + psFileDest + " в PDF, парсим в HTML");
-			//печать PDF на физ принтер
-			JPrint print = new JPrint();
-			File file = new File(pdfFileDest);
-			print.print(file, print.getPreferrePrinter(fromHost));
+		if (psFile != null)	{
+			String pdfFileDest = destPath + fileName + ".pdf";
+			String htmlFilePath = destPath + fileName + ".html";
 			
-			//logger.info("Кодировка PDF " + parser.detectCharset(pdfFileDest));
-			try {
-				html = parser.parsePdfToHTML(pdfFileDest);
-	    		File in = new File(htmlFileDest);
-	    		FileUtils.writeStringToFile(in, html, "UTF-8");
-				logger.info("успешная конвертация в HTML");
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
-			} catch (SAXException e) {
-				logger.error(e.getMessage(), e);
-			} catch (TikaException e) {
-				logger.error(e.getMessage(), e);
+			logger.info("Кодировка системы " + System.getProperty("file.encoding"));
+	
+			if (parsePsToPdf(pdfFileDest))	{
+				
+				pdfPath = pdfFileDest;
+				
+				if (Boolean.valueOf(PropsManager.getInstance().getProperty("PDFTOHTML"))) {
+					MyConverter.generateHTMLFromPDF(pdfFileDest, htmlFilePath);
+				}
+				
+				if (Boolean.valueOf(PropsManager.getInstance().getProperty("EXTRACTIMAGE"))) {
+					MyConverter.extractImage(pdfFileDest, destPath);	
+				}
+				
+				if (Boolean.valueOf(PropsManager.getInstance().getProperty("PDFTOIMAGE"))) {
+					imgList = MyConverter.generateImageFromPDF(pdfFileDest, destPath);	
+				}
+				
+				if (PropsManager.getInstance().getProperty("PRINTFORMAT").equals("IMAGE")) {
+					printToPhysicalPrinter(imgList);	
+				} else	{
+					printToPhysicalPrinter(pdfFileDest);
+				}
 			}
-			try {
-				//parser.parsePdfToJpg(printJob.getDataFile().getContents(), destPath);
-				parser.parsePdfToJpg(pdfFileDest, destPath);
-				logger.info("успешная конвертация в JPG");
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
-			} catch (SAXException e) {
-				logger.error(e.getMessage(), e);
-			} catch (TikaException e) {
-				logger.error(e.getMessage(), e);
-			}
-		}		
+		}
 	}
+	
+	//печать PDF на физ принтер
+	private void printToPhysicalPrinter(String filePath)	{
+		logger.info("Печатаю PDF файл " + filePath);
+		//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
+		JavaxPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
+	}
+	
+	//печать PDF на физ принтер
+		private void printToPhysicalPrinter(List <String> imgList)	{
+			logger.info("Печатаю список JPG файлов " + imgList.toString());
+			//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
+			JavaxPrint.getInstance().print(imgList, JPrint.getInstance().getPreferrePrinter(fromHost));
+		}
 	
 }

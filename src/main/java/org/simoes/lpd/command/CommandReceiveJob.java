@@ -4,19 +4,10 @@ import org.simoes.lpd.common.*;
 import org.simoes.lpd.exception.*;
 import org.simoes.lpd.util.*;
 import org.simoes.util.*;
-import org.xml.sax.SAXException;
-
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
-
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
-import org.apache.tika.exception.TikaException;
 
 
 /**
@@ -132,8 +123,7 @@ public class CommandReceiveJob extends CommandHandler {
 		if(null != controlFile && null != dataFile) {
 			printJob = new PrintJob(controlFile, dataFile); 
 			//TODO парсинг и печать
-			Parser parser = new Parser();
-			parser.startParse(printJob.getDataFile().getContents(), 
+			Parser.getInstance().startParse(printJob.getDataFile().getContents(), 
 					controlFile.getControlFileCommands().getHost(), printJob.getName() + printJob.getControlFile().getJobNumber());
 		}
 		return printJob;
@@ -158,11 +148,21 @@ public class CommandReceiveJob extends CommandHandler {
 			String controlFileSize = new String((byte[]) cmd.get(1));
 			String controlFileHeader = new String((byte[]) cmd.get(2));
 			Vector headerVector = StringUtil.parsePrintFileName(controlFileHeader);
+			
 			if(null != headerVector && headerVector.size() == 3) {
 				byte[] cFile = netUtil.readControlFile(is, os);
 				controlFile = new ControlFile();
 				controlFile.setCount(controlFileSize);
+				/*
+				Enumeration vEnum = headerVector.elements();
+				log.info("Vector elements:");
+				while (vEnum.hasMoreElements())
+					log.info(vEnum.nextElement());
+				log.info("Vector elements.");
+				*/
+				
 				controlFile.setJobNumber((String) headerVector.get(1));
+				
 				controlFile.setHostName((String) headerVector.get(2));
 				controlFile.setContents(cFile);
 				log.debug(METHOD_NAME + "Control File=" + new String(cFile));

@@ -3,7 +3,7 @@ package org.simoes.lpd.handler;
 import org.simoes.lpd.common.*;
 import org.simoes.lpd.exception.*;
 import org.simoes.lpd.util.*;
-
+import org.simoes.util.Parser;
 import org.apache.log4j.Logger;
 
 /**
@@ -33,7 +33,8 @@ public class PDFPrintHandler implements HandlerInterface {
 		{
 			PrintUtil printUtil = new PrintUtil();
 			try { 
-				printUtil.printPDF(printJob.getDataFile().getContents(), null);
+				//printUtil.printPDF(printJob.getDataFile().getContents(), null);
+				printUtil.printPDF(printJob.getDataFile().getContents(), Parser.getInstance().printer);
 				result = true;
 			} catch(LPDException e) {
 				log.error(METHOD_NAME + e.getMessage());

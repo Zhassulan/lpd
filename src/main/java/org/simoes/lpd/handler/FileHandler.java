@@ -60,7 +60,8 @@ public class FileHandler implements HandlerInterface {
 				log.error(e.getMessage(), e);
 			}
 			
-			String fileName = tmpDir + host + "/" + printJob.getName() + printJob.getControlFile().getJobNumber() + ".pjb";
+			//String fileName = tmpDir + host + "/" + printJob.getName() + printJob.getControlFile().getJobNumber() + ".pjb";
+			String fileName = tmpDir + host + "/" + Parser.getFileNameFromFullPath(printJob.getName()) + printJob.getControlFile().getJobNumber() + ".pjb";
 			try { 
 				FileUtil.writeFile(printJob.getDataFile().getContents(), fileName);
 				result = true;
