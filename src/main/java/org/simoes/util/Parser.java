@@ -264,16 +264,26 @@ public class Parser {
 	
 	//печать PDF на физ принтер
 	private void printToPhysicalPrinter(String filePath)	{
-		logger.info("Печатаю PDF файл " + filePath);
-		//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
-		JavaxPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
+		String printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+		if (printer != null) {
+			logger.info("Печатаю PDF файл " + filePath);
+			//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
+			JavaxPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));	
+		}	else	{
+			logger.error("Не найден принтер, отмена печати");
+		}
 	}
 	
 	//печать PDF на физ принтер
 		private void printToPhysicalPrinter(List <String> imgList)	{
-			logger.info("Печатаю список JPG файлов " + imgList.toString());
-			//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
-			JavaxPrint.getInstance().print(imgList, JPrint.getInstance().getPreferrePrinter(fromHost));
+			String printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+			if (printer != null) {
+				logger.info("Печатаю список JPG файлов " + imgList.toString());
+				//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
+				JavaxPrint.getInstance().print(imgList, JPrint.getInstance().getPreferrePrinter(fromHost));	
+			}	else	{
+				logger.error("Не найден принтер, отмена печати");
+			}
 		}
 	
 }
