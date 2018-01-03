@@ -1,14 +1,9 @@
 package org.simoes.util;
 
-import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.print.PageFormat;
-import java.awt.print.Paper;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 import javax.print.Doc;
@@ -22,7 +17,6 @@ import javax.print.attribute.*;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
-import javax.print.attribute.standard.PrinterResolution;
 import javax.print.event.*;
 
 import org.apache.log4j.Logger;
@@ -44,6 +38,7 @@ public class JavaxPrint { //implements Printable {
 	}
 
 	public PrintService getPrintService(String printerName) {
+		logger.info("Попытка получить сервис принтера в ОС");
 		try {
 			if (printerName.contains("/"))
 				printerName = printerName.replaceAll("/", "\\\\");
@@ -78,7 +73,6 @@ public class JavaxPrint { //implements Printable {
 		PrintService ps = null;
 		while (i++ < tries)	{
 			//пытаемся получить сервис сетевого принтера ОС по его имени
-			logger.info("Пытаюсь получить сервис принтера в ОС..");
 			ps = getPrintService(printerName);
 			//Если сетевой принтер доступен в ОС
 			if (ps != null) {
@@ -127,6 +121,11 @@ public class JavaxPrint { //implements Printable {
 			} catch (PrintException e) {
 				logger.error(e.getMessage(), e);
 			}
+			try {
+				fis.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage(), e);
+			}
 			logger.info("Печать окончена.");
 		}	else	{
 			logger.info("Печать не произведена, на найден сервис принтера в ОС.");
@@ -159,7 +158,6 @@ public class JavaxPrint { //implements Printable {
 		PrintService ps = null;
 		while (i++ < tries)	{
 			//пытаемся получить сервис сетевого принтера ОС по его имени
-			logger.info("Пытаюсь получить сервис принтера в ОС..");
 			ps = getPrintService(printerName);
 			//Если сетевой принтер доступен в ОС
 			if (ps != null) {
@@ -212,6 +210,11 @@ public class JavaxPrint { //implements Printable {
 					try {
 						job.print(doc, attrib);
 						logger.info("Файл " + fileItem + " отправлен на принтер.");
+						try {
+							fis.close();
+						} catch (IOException e) {
+							logger.error(e.getMessage(), e);
+						}
 					} catch (PrintException e) {
 						logger.error(e.getMessage(), e);
 					}
