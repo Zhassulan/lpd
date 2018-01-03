@@ -68,8 +68,32 @@ public class JavaxPrint { //implements Printable {
 	}
 
 	public void print(String filePath, String printerName) {
-		logger.info("Печатать файла " + filePath + " на принтер " + printerName);
-		PrintService ps = getPrintService(printerName);
+		logger.info("Метод печати файла " + filePath + " на принтер " + printerName);
+		//количество попыток опроса печатного оборудования
+		int tries = 3;
+		//счётчик
+		int i = 0;
+		
+		PrintService ps = null;
+		while (i++ < tries)	{
+			//пытаемся получить сервис сетевого принтера ОС по его имени
+			logger.info("Пытаюсь получить сервис принтера в ОС..");
+			ps = getPrintService(printerName);
+			//Если сетевой принтер доступен в ОС
+			if (ps != null) {
+				logger.info("Сервис получен.");
+				break;
+			}	else	{
+				logger.info("Сервис не получен, попытка " + i);
+				//ждём две секунды
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+		
 		DocPrintJob job = ps.createPrintJob();
 		logger.info("Создана задача для принтера " + ps.getName());
 
@@ -119,8 +143,32 @@ public class JavaxPrint { //implements Printable {
     */
 	
 	public void print(List <String> imgList, String printerName) {
-		logger.info("Печатать на принтер список JPG файлов " + printerName);
-		PrintService ps = getPrintService(printerName);
+		logger.info("Метод печати на принтер по списку JPG файлов " + printerName);
+		//количество попыток опроса печатного оборудования
+		int tries = 3;
+		//счётчик
+		int i = 0;
+		
+		PrintService ps = null;
+		while (i++ < tries)	{
+			//пытаемся получить сервис сетевого принтера ОС по его имени
+			logger.info("Пытаюсь получить сервис принтера в ОС..");
+			ps = getPrintService(printerName);
+			//Если сетевой принтер доступен в ОС
+			if (ps != null) {
+				logger.info("Сервис получен.");
+				break;
+			}	else	{
+				logger.info("Сервис не получен, попытка " + i);
+				//ждём две секунды
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					logger.error(e.getMessage(), e);
+				}
+			}
+		}
+
 		DocPrintJob job = ps.createPrintJob();
 		logger.info("Создана задача для принтера " + ps.getName());
 		

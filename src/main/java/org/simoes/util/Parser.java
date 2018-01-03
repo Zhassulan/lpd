@@ -264,7 +264,7 @@ public class Parser {
 	
 	//печать PDF на физ принтер
 	private void printToPhysicalPrinter(String filePath)	{
-		String printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+		String  printer = JPrint.getInstance().getPreferrePrinter(fromHost);
 		if (printer != null) {
 			logger.info("Печатаю PDF файл " + filePath);
 			//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
