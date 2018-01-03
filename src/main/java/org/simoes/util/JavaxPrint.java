@@ -51,11 +51,12 @@ public class JavaxPrint { //implements Printable {
 			logger.error(e.getMessage(), e);
 		}
 		PrintService[] pservices = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
+		logger.info("Ищем в ОС принтер " + printerName);
 		for (PrintService s : pservices) {
-			logger.info("Сравниваем принтер " + printerName + " с " + s.getName());
+			logger.info("Принтер в ОС " + s.getName());
 			try {
 				if (printerName.equals(s.getName())) {
-					logger.info("Нашёл принтер!");
+					logger.info("Принтер найден, " + printerName + " = " + s.getName());
 					return s;
 				}
 			} catch (Exception e) {
@@ -63,7 +64,7 @@ public class JavaxPrint { //implements Printable {
 			}
 		}
 		// return PrintServiceLookup.lookupDefaultPrintService();
-		logger.info("Не нашёл принтер");
+		logger.info("Принтер не найден.");
 		return null;
 	}
 
@@ -94,35 +95,41 @@ public class JavaxPrint { //implements Printable {
 			}
 		}
 		
-		DocPrintJob job = ps.createPrintJob();
-		logger.info("Создана задача для принтера " + ps.getName());
+		if (ps != null) {
+			DocPrintJob job = ps.createPrintJob();
+			logger.info("Создана задача для принтера " + ps.getName());
 
-		job.addPrintJobListener(new PrintJobAdapter() {
-			public void printDataTransferCompleted(PrintJobEvent event) {
-				logger.info("data transfer complete");
+			job.addPrintJobListener(new PrintJobAdapter() {
+				public void printDataTransferCompleted(PrintJobEvent event) {
+					logger.info("data transfer complete");
+				}
+
+				public void printJobNoMoreEvents(PrintJobEvent event) {
+					logger.info("received no more events");
+				}
+			});
+
+			FileInputStream fis = null;
+			try {
+				File file = new File(filePath);
+				fis = new FileInputStream(file);
+			} catch (FileNotFoundException e1) {
+				logger.error(e1.getMessage(), e1);
 			}
 
-			public void printJobNoMoreEvents(PrintJobEvent event) {
-				logger.info("received no more events");
+			Doc doc = new SimpleDoc(fis, DocFlavor.INPUT_STREAM.AUTOSENSE, null);
+
+			PrintRequestAttributeSet attrib = new HashPrintRequestAttributeSet();
+			attrib.add(new Copies(1));
+			try {
+				job.print(doc, attrib);
+				logger.info("Файл " + filePath + " отправлен на принтер.");
+			} catch (PrintException e) {
+				logger.error(e.getMessage(), e);
 			}
-		});
-
-		FileInputStream fis = null;
-		try {
-			File file = new File(filePath);
-			fis = new FileInputStream(file);
-		} catch (FileNotFoundException e1) {
-			logger.error(e1.getMessage(), e1);
-		}
-
-		Doc doc = new SimpleDoc(fis, DocFlavor.INPUT_STREAM.AUTOSENSE, null);
-
-		PrintRequestAttributeSet attrib = new HashPrintRequestAttributeSet();
-		attrib.add(new Copies(1));
-		try {
-			job.print(doc, attrib);
-		} catch (PrintException e) {
-			logger.error(e.getMessage(), e);
+			logger.info("Печать окончена.");
+		}	else	{
+			logger.info("Печать не произведена, на найден сервис принтера в ОС.");
 		}
 	}
 
@@ -168,53 +175,54 @@ public class JavaxPrint { //implements Printable {
 				}
 			}
 		}
-
-		DocPrintJob job = ps.createPrintJob();
-		logger.info("Создана задача для принтера " + ps.getName());
 		
-		
+		if (ps != null) {
+			DocPrintJob job = ps.createPrintJob();
+			logger.info("Создана задача для принтера " + ps.getName());
 
-		job.addPrintJobListener(new PrintJobAdapter() {
-			public void printDataTransferCompleted(PrintJobEvent event) {
-				logger.info("data transfer complete");
-			}
+			job.addPrintJobListener(new PrintJobAdapter() {
+				public void printDataTransferCompleted(PrintJobEvent event) {
+					logger.info("data transfer complete");
+				}
 
-			public void printJobNoMoreEvents(PrintJobEvent event) {
-				logger.info("received no more events");
-			}
-		});
-		
-		FileInputStream fis = null;
-		Doc doc = null;
+				public void printJobNoMoreEvents(PrintJobEvent event) {
+					logger.info("received no more events");
+				}
+			});
+			
+			FileInputStream fis = null;
+			Doc doc = null;
 
-		for (String fileItem : imgList) {
-			try {
-				File file = new File(fileItem);
-				fis = new FileInputStream(file);
-				DocAttributeSet das = new HashDocAttributeSet();
-				
-				int width = Math.round(MediaSize.ISO.A4.getX(MediaSize.MM));
-				int height = Math.round(MediaSize.ISO.A4.getY(MediaSize.MM));
-
-				das.add(new MediaPrintableArea(10, 10, width-10, height-10, MediaPrintableArea.MM));
-				//add(new PrinterResolution(203, 203, PrinterResolution.DPI));  
-				
-				doc = new SimpleDoc(fis, DocFlavor.INPUT_STREAM.JPEG, das);  
-				PrintRequestAttributeSet attrib = new HashPrintRequestAttributeSet();
-				attrib.add(new Copies(1));
-				
+			for (String fileItem : imgList) {
 				try {
-					logger.info("Попытка распечатать файл " + fileItem);
-					job.print(doc, attrib);
-				} catch (PrintException e) {
+					File file = new File(fileItem);
+					fis = new FileInputStream(file);
+					DocAttributeSet das = new HashDocAttributeSet();
+					
+					int width = Math.round(MediaSize.ISO.A4.getX(MediaSize.MM));
+					int height = Math.round(MediaSize.ISO.A4.getY(MediaSize.MM));
+
+					das.add(new MediaPrintableArea(10, 10, width-10, height-10, MediaPrintableArea.MM));
+					//add(new PrinterResolution(203, 203, PrinterResolution.DPI));  
+					
+					doc = new SimpleDoc(fis, DocFlavor.INPUT_STREAM.JPEG, das);  
+					PrintRequestAttributeSet attrib = new HashPrintRequestAttributeSet();
+					attrib.add(new Copies(1));
+					
+					try {
+						job.print(doc, attrib);
+						logger.info("Файл " + fileItem + " отправлен на принтер.");
+					} catch (PrintException e) {
+						logger.error(e.getMessage(), e);
+					}
+				} catch (FileNotFoundException e) {
 					logger.error(e.getMessage(), e);
 				}
-			} catch (FileNotFoundException e) {
-				logger.error(e.getMessage(), e);
 			}
+			logger.info("Печать окончена.");
+		}	else	{
+			logger.info("Печать не произведена, на найден сервис принтера в ОС.");
 		}
-
-		
 	}
 
 }
