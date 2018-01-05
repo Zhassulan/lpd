@@ -21,9 +21,13 @@ import javax.print.event.*;
 
 import org.apache.log4j.Logger;
 
+import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
+
 public class JavaxPrint { //implements Printable {
 
 	private static volatile JavaxPrint _instance = null;
+	private static final Integer SLEEPTIME = Integer.valueOf(PropsManager.getInstance().getProperty("SLEEP")) * 1000;
+	private static final Integer TRIES = Integer.valueOf(PropsManager.getInstance().getProperty("TRIES")) * 1000;
 	//private Image image;
 
 	static Logger logger = Logger.getLogger(JavaxPrint.class);
@@ -38,6 +42,7 @@ public class JavaxPrint { //implements Printable {
 	}
 
 	public PrintService getPrintService(String printerName) {
+		if (printerName == null) return null;
 		logger.info("Попытка получить сервис принтера в ОС");
 		try {
 			if (printerName.contains("/"))
@@ -45,17 +50,24 @@ public class JavaxPrint { //implements Printable {
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
-		PrintService[] pservices = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
-		logger.info("Ищем в ОС принтер " + printerName);
-		for (PrintService s : pservices) {
-			logger.info("Принтер в ОС " + s.getName());
-			try {
-				if (printerName.equals(s.getName())) {
-					logger.info("Принтер найден, " + printerName + " = " + s.getName());
-					return s;
+		PrintService[] pservices = null;
+		try	{
+			pservices = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);	
+		}	catch (Exception e) {
+			logger.error(e.getMessage(), e);
+		}
+		if (pservices != null) {
+			logger.info("Ищем в ОС принтер " + printerName);
+			for (PrintService s : pservices) {
+				logger.info("Принтер в ОС " + s.getName());
+				try {
+					if (printerName.equals(s.getName())) {
+						logger.info("Принтер найден, " + printerName + " = " + s.getName());
+						return s;
+					}
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
 				}
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
 			}
 		}
 		// return PrintServiceLookup.lookupDefaultPrintService();
@@ -65,30 +77,7 @@ public class JavaxPrint { //implements Printable {
 
 	public void print(String filePath, String printerName) {
 		logger.info("Метод печати файла " + filePath + " на принтер " + printerName);
-		//количество попыток опроса печатного оборудования
-		int tries = 3;
-		//счётчик
-		int i = 0;
-		
-		PrintService ps = null;
-		while (i++ < tries)	{
-			//пытаемся получить сервис сетевого принтера ОС по его имени
-			ps = getPrintService(printerName);
-			//Если сетевой принтер доступен в ОС
-			if (ps != null) {
-				logger.info("Сервис получен.");
-				break;
-			}	else	{
-				logger.info("Сервис не получен, попытка " + i);
-				//ждём две секунды
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage(), e);
-				}
-			}
-		}
-		
+		PrintService ps = tryToGetPrintService(printerName);
 		if (ps != null) {
 			DocPrintJob job = ps.createPrintJob();
 			logger.info("Создана задача для принтера " + ps.getName());
@@ -132,31 +121,15 @@ public class JavaxPrint { //implements Printable {
 		}
 	}
 
-	/*
-	@Override
-    public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
-	  if (pageIndex == 0) {
-          final Paper paper = pageFormat.getPaper();
-          paper.setImageableArea(0.0, 0.0, pageFormat.getPaper().getWidth(), pageFormat.getPaper().getHeight());
-          pageFormat.setPaper(paper);
-          graphics.translate((int) pageFormat.getImageableX(), (int) pageFormat.getImageableY());
-          graphics.drawImage(image, 0, 0, (int) pageFormat.getPaper().getWidth(), (int) pageFormat.getPaper().getHeight(), null);
-          return PAGE_EXISTS;
-      } else {
-          return NO_SUCH_PAGE;
-      }
-    }
-    */
-	
-	public void print(List <String> imgList, String printerName) {
-		logger.info("Метод печати на принтер по списку JPG файлов " + printerName);
+	//попытка получить сервис принтера в ОС
+	private PrintService tryToGetPrintService(String printerName)	{
+		if (printerName == null) return null;
+		logger.info("Попытка получить сервис принтера из ОС (" + printerName + ")");
 		//количество попыток опроса печатного оборудования
-		int tries = 3;
 		//счётчик
 		int i = 0;
-		
 		PrintService ps = null;
-		while (i++ < tries)	{
+		while (i++ < TRIES)	{
 			//пытаемся получить сервис сетевого принтера ОС по его имени
 			ps = getPrintService(printerName);
 			//Если сетевой принтер доступен в ОС
@@ -167,13 +140,18 @@ public class JavaxPrint { //implements Printable {
 				logger.info("Сервис не получен, попытка " + i);
 				//ждём две секунды
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(SLEEPTIME);
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
 				}
 			}
 		}
-		
+		return ps;
+	}
+	
+	public void print(List <String> imgList, String printerName) {
+		logger.info("Метод печати на принтер по списку JPG файлов " + printerName);
+		PrintService ps = tryToGetPrintService(printerName);
 		if (ps != null) {
 			DocPrintJob job = ps.createPrintJob();
 			logger.info("Создана задача для принтера " + ps.getName());
