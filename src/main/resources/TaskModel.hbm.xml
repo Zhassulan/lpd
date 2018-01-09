@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" 
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 09.01.2018 12:11:59 by Hibernate Tools 3.5.0.Final -->
+<hibernate-mapping>
+    <class name="kz.ugs.lpd.models.TaskModel" table="tasks">
+        <id name="id" type="int">
+            <column name="ID" />
+            <generator class="increment" />
+        </id>
+        <property name="fromHost" type="java.lang.String">
+            <column name="FROMHOST" />
+        </property>
+        <property name="created" type="timestamp">
+            <column name="CREATED" />
+        </property>
+        <property name="status" type="boolean">
+            <column name="STATUS" />
+        </property>
+    </class>
+</hibernate-mapping>

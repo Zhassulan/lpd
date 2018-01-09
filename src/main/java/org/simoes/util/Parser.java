@@ -20,6 +20,7 @@ import org.ghost4j.document.PSDocument;
 import org.xml.sax.SAXException;
 
 import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
+import kz.ugs.lpd.services.TaskService;
 
 import org.simoes.lpd.LPD;
 
@@ -36,7 +37,16 @@ public class Parser {
 	public static String printer;
 	public File psFile;
 	private List <String> imgList = new ArrayList <String> ();
+	private TaskService taskService;
 	
+	public TaskService getTaskService() {
+		return taskService;
+	}
+
+	public void setTaskService(TaskService taskService) {
+		this.taskService = taskService;
+	}
+
 	public static Logger logger = LogManager.getLogger(LPD.class);
 	
 	public static synchronized Parser getInstance() {
@@ -238,6 +248,10 @@ public class Parser {
 			logger.info("Кодировка системы " + System.getProperty("file.encoding"));
 	
 			if (parsePsToPdf(pdfFileDest))	{
+				
+				//создаём задачу
+				taskService = new TaskService();
+				taskService.createTask(fromHost);
 				
 				pdfPath = pdfFileDest;
 				

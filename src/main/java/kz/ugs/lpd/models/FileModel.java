@@ -10,6 +10,8 @@ public class FileModel {
 	private String filepath;
 	private Date created;
 	
+	public FileModel() {}
+
 	public int getTask_id() {
 		return task_id;
 	}
