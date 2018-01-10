@@ -11,7 +11,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 /**
- * @author ZTokbayev класс модель для задачи пришедгей на виртуальные принтер
+ * @author ZTokbayev класс модель для задачи пришедшей на виртуальный принтер LPD
  */
 @Entity
 @Table(name="TASKS")

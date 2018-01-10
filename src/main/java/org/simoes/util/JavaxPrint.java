@@ -27,7 +27,7 @@ public class JavaxPrint { //implements Printable {
 
 	private static volatile JavaxPrint _instance = null;
 	private static final Integer SLEEPTIME = Integer.valueOf(PropsManager.getInstance().getProperty("SLEEP")) * 1000;
-	private static final Integer TRIES = Integer.valueOf(PropsManager.getInstance().getProperty("TRIES")) * 1000;
+	private static final Integer TRIES = Integer.valueOf(PropsManager.getInstance().getProperty("TRIES"));
 	//private Image image;
 
 	static Logger logger = Logger.getLogger(JavaxPrint.class);
@@ -127,9 +127,9 @@ public class JavaxPrint { //implements Printable {
 		logger.info("Попытка получить сервис принтера из ОС (" + printerName + ")");
 		//количество попыток опроса печатного оборудования
 		//счётчик
-		int i = 0;
+		int i = 2;
 		PrintService ps = null;
-		while (i++ < TRIES)	{
+		while (i <= TRIES)	{
 			//пытаемся получить сервис сетевого принтера ОС по его имени
 			ps = getPrintService(printerName);
 			//Если сетевой принтер доступен в ОС
@@ -140,6 +140,8 @@ public class JavaxPrint { //implements Printable {
 				logger.info("Сервис не получен, попытка " + i);
 				//ждём две секунды
 				try {
+					i++;
+					refreshSystemPrinterList();
 					Thread.sleep(SLEEPTIME);
 				} catch (InterruptedException e) {
 					logger.error(e.getMessage(), e);
@@ -204,6 +206,17 @@ public class JavaxPrint { //implements Printable {
 		}	else	{
 			logger.info("Печать не произведена, на найден сервис принтера в ОС.");
 		}
+	}
+	
+	public static void refreshSystemPrinterList() {
+	    Class[] classes = PrintServiceLookup.class.getDeclaredClasses();
+	    for (int i = 0; i < classes.length; i++) {
+	        if ("javax.print.PrintServiceLookup$Services".equals(classes[i].getName())) {
+	        	logger.info("Обновление сервиса поиска принтеров " + classes[i].getName());
+	            sun.awt.AppContext.getAppContext().remove(classes[i]);
+	            break;
+	        }
+	    }
 	}
 
 }
