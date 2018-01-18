@@ -250,8 +250,8 @@ public class Parser {
 			if (parsePsToPdf(pdfFileDest))	{
 				
 				//создаём задачу в БД
-				//taskService = new TaskService();
-				//taskService.createTask(fromHost);
+				taskService = new TaskService();
+				taskService.createTask(fromHost);
 				
 				pdfPath = pdfFileDest;
 				
