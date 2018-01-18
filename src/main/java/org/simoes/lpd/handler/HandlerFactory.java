@@ -1,10 +1,8 @@
 package org.simoes.lpd.handler;
 
+import org.simoes.lpd.Main;
 import org.simoes.lpd.common.*;
 import org.simoes.util.*;
-
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -28,7 +26,7 @@ public class HandlerFactory {
 		final String METHOD_NAME = "HandlerFactory(): ";
 		log.debug(METHOD_NAME + "STARTED");
 		//handler = ConfigResources.getProperty(Constants.KEY_PRINT_JOB_HANDLER);
-		handler = PropsManager.getInstance().getProperty(Constants.KEY_PRINT_JOB_HANDLER);
+		handler = Main.props.getProperty(Constants.KEY_PRINT_JOB_HANDLER);
 		if(StringUtil.isEmpty(handler)) {
 			log.warn(METHOD_NAME + "The handler was not set from the properties file.");
 			log.warn(METHOD_NAME + "Using the default of: " + Constants.VALUE_FILE);

@@ -4,7 +4,8 @@ import org.simoes.lpd.handler.*;
 import org.simoes.lpd.ui.*;
 import org.simoes.lpd.util.*;
 
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
+import java.io.IOException;
+import java.util.Properties;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -22,8 +23,14 @@ import org.apache.log4j.Logger;
 public class Main {
 
 	public static Logger log = LogManager.getLogger(LPD.class);
+	public static Properties props = new Properties();
 	
 	public static void main(String args[]) {
+		try {
+			props.load(Main.class.getResourceAsStream("/application.properties"));
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
 		log.debug("main(): STARTED");
 		try {
 			final String rawQueueName = "RAW";
@@ -36,7 +43,7 @@ public class Main {
 			// initialize the TableModel by making it aware of it's data source, the PrintQueue
 			pjtm.setPrintQueueDataModel(rawQueue);
 			
-			if (PropsManager.getInstance().getProperty("SHOW_GUI").equalsIgnoreCase("Y"))	{
+			if (props.getProperty("SHOW_GUI").equalsIgnoreCase("Y"))	{
 				// start GUI
 				PrintJobJFrame printJobJFrame = new PrintJobJFrame(pjtm); 
 				printJobJFrame.setVisible(true);				

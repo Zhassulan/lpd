@@ -20,7 +20,7 @@ public class FileModel {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	@ManyToOne
-    @JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "FILES_TASKS_FK"))
+    //@JoinColumn(name = "task_id", foreignKey = @ForeignKey(name = "FILES_TASKS_FK"))
 	private int task_id;
 	private String filename;
 	private String filepath;

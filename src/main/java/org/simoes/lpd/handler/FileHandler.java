@@ -1,10 +1,8 @@
 package org.simoes.lpd.handler;
 
+import org.simoes.lpd.Main;
 import org.simoes.lpd.common.*;
 import org.simoes.util.*;
-
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +36,7 @@ public class FileHandler implements HandlerInterface {
 	 * @return the result of our work, true for success or false for non-success
 	 */
 	public boolean process(PrintJob printJob) {
+		/*
 		final String METHOD_NAME = "process(): ";
 		boolean result = false;
 		if(null != printJob 
@@ -46,7 +45,7 @@ public class FileHandler implements HandlerInterface {
 		{
 			// create file name, pjb == print job
 			String host = printJob.getControlFile().getControlFileCommands().getHost();
-			String tmpDir = PropsManager.getInstance().getProperty("TEMP_DIR");
+			String tmpDir = Main.props.getProperty("TEMP_DIR");
 			Path path = Paths.get(tmpDir);
 			try {
 				Files.createDirectories(path);
@@ -72,6 +71,8 @@ public class FileHandler implements HandlerInterface {
 			log.error(METHOD_NAME + "The printJob or printJob.getControlFile() or printJob.getDataFile() were empty");
 		}
 		return result;
+		*/
+		return true;
 	}
 
 }

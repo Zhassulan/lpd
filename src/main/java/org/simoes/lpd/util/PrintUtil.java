@@ -1,11 +1,9 @@
 package org.simoes.lpd.util;
 
+import org.simoes.lpd.Main;
 import org.simoes.lpd.common.*;
 import org.simoes.lpd.exception.*;
 import org.simoes.util.*;
-
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -46,7 +44,7 @@ public class PrintUtil {
 		
 		final String METHOD_NAME = "printPDF(): ";
 		//final String ACROBAT = ConfigResources.getProperty(Constants.ACROREAD_PROGRAM);
-		final String ACROBAT = PropsManager.getInstance().getProperty(Constants.ACROREAD_PROGRAM);
+		final String ACROBAT = Main.props.getProperty(Constants.ACROREAD_PROGRAM);
 		/*
 		if(!filename.exists()) {
 			throw new LPDException(METHOD_NAME + filename.getAbsolutePath() + " does not exist.");
@@ -97,7 +95,7 @@ public class PrintUtil {
 	public void printPDF(byte[] data, String printer) throws LPDException {
 		final String METHOD_NAME = "printPDF(): ";
 		//String tempFilename = ConfigResources.getProperty(Constants.TEMP_DIR) + TEMP_PDF;
-		String tempFilename = PropsManager.getInstance().getProperty(Constants.TEMP_DIR) + TEMP_PDF;
+		String tempFilename = Main.props.getProperty(Constants.TEMP_DIR) + TEMP_PDF;
 		try {
 			File tempFile = FileUtil.writeFile(data, tempFilename);
 			printPDF(tempFile, printer);

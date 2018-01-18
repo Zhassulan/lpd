@@ -20,14 +20,13 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.event.*;
 
 import org.apache.log4j.Logger;
-
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
+import org.simoes.lpd.Main;
 
 public class JavaxPrint { //implements Printable {
 
 	private static volatile JavaxPrint _instance = null;
-	private static final Integer SLEEPTIME = Integer.valueOf(PropsManager.getInstance().getProperty("SLEEP")) * 1000;
-	private static final Integer TRIES = Integer.valueOf(PropsManager.getInstance().getProperty("TRIES"));
+	private static final Integer SLEEPTIME = Integer.valueOf(Main.props.getProperty("SLEEP")) * 1000;
+	private static final Integer TRIES = Integer.valueOf(Main.props.getProperty("TRIES"));
 	//private Image image;
 
 	static Logger logger = Logger.getLogger(JavaxPrint.class);

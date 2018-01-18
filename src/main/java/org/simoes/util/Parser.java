@@ -18,11 +18,10 @@ import org.ghost4j.converter.PDFConverter;
 import org.ghost4j.document.DocumentException;
 import org.ghost4j.document.PSDocument;
 import org.xml.sax.SAXException;
-
-import kz.ugs.callisto.system.propertyfilemanager.PropsManager;
 import kz.ugs.lpd.services.TaskService;
 
 import org.simoes.lpd.LPD;
+import org.simoes.lpd.Main;
 
 /** Класс парсер PS в PDF HTML/JPG
  *  @author ZTokbayev
@@ -229,7 +228,7 @@ public class Parser {
 		fileName = getFileNameFromFullPath(fileName);
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss");
 		LocalDateTime now = LocalDateTime.now();
-		String tmpDir = PropsManager.getInstance().getProperty("STORAGE"); 	
+		String tmpDir = Main.props.getProperty("STORAGE"); 	
 		String destPath = tmpDir + fromHost + "/" + dtf.format(now) + "/";
 		Path path = Paths.get(destPath);
 		try {
@@ -249,25 +248,28 @@ public class Parser {
 	
 			if (parsePsToPdf(pdfFileDest))	{
 				
+				//удаляем большой Pbj файл
+				FileUtil.deleteFile(psFile);
+				
 				//создаём задачу в БД
-				taskService = new TaskService();
-				taskService.createTask(fromHost);
+				//taskService = new TaskService();
+				//taskService.createTask(fromHost);
 				
 				pdfPath = pdfFileDest;
 				
-				if (Boolean.valueOf(PropsManager.getInstance().getProperty("PDFTOHTML"))) {
+				if (Boolean.valueOf(Main.props.getProperty("PDFTOHTML"))) {
 					MyConverter.generateHTMLFromPDF(pdfFileDest, htmlFilePath);
 				}
 				
-				if (Boolean.valueOf(PropsManager.getInstance().getProperty("EXTRACTIMAGE"))) {
+				if (Boolean.valueOf(Main.props.getProperty("EXTRACTIMAGE"))) {
 					MyConverter.extractImage(pdfFileDest, destPath);	
 				}
 				
-				if (Boolean.valueOf(PropsManager.getInstance().getProperty("PDFTOIMAGE"))) {
+				if (Boolean.valueOf(Main.props.getProperty("PDFTOIMAGE"))) {
 					imgList = MyConverter.generateImageFromPDF(pdfFileDest, destPath);	
 				}
 				
-				if (PropsManager.getInstance().getProperty("PRINTFORMAT").equals("IMAGE")) {
+				if (Main.props.getProperty("PRINTFORMAT").equals("IMAGE")) {
 					printToPhysicalPrinter(imgList);	
 				} else	{
 					printToPhysicalPrinter(pdfFileDest);
@@ -278,26 +280,54 @@ public class Parser {
 	
 	//печать PDF на физ принтер
 	private void printToPhysicalPrinter(String filePath)	{
-		String  printer = JPrint.getInstance().getPreferrePrinter(fromHost);
-		if (printer != null) {
-			logger.info("Печатаю PDF файл " + filePath);
-			//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
-			JavaxPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));	
+		String printer = null;
+		if (Main.props.getProperty("PRINTMODE").equals("local"))	{
+			logger.info("Печать на дефолтный принтер компьютера");
+			printer = JPrint.getDefaultPrinter();
+			if (printer != null)	{
+				logger.info("Печатаю список JPG файлов " + imgList.toString());
+				JavaxPrint.getInstance().print(filePath, printer);
+				logger.info("Печать на MISPrinter");
+				JavaxPrint.getInstance().print(filePath, Main.props.getProperty("MISPRINTER"));
+			}	else	{
+				logger.error("Не найден принтер, отмена печати");
+			}	
 		}	else	{
-			logger.error("Не найден принтер, отмена печати");
+			//или выбираем принтер по маппингу
+			/*
+			printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+			if (printer != null)	{
+				logger.info("Печатаю список JPG файлов " + imgList.toString());
+				JavaxPrint.getInstance().print(filePath, printer);
+			}	else	{
+				logger.error("Не найден принтер, отмена печати");
+			}
+			*/
 		}
 	}
 	
 	//печать PDF на физ принтер
-		private void printToPhysicalPrinter(List <String> imgList)	{
-			String printer = JPrint.getInstance().getPreferrePrinter(fromHost);
-			if (printer != null) {
+	private void printToPhysicalPrinter(List <String> imgList)	{
+		String printer = null;
+		if (Main.props.getProperty("PRINTMODE").equals("local"))	{
+			printer = JPrint.getInstance().getDefaultPrinter();
+			if (printer != null)	{
 				logger.info("Печатаю список JPG файлов " + imgList.toString());
-				//JPrint.getInstance().print(filePath, JPrint.getInstance().getPreferrePrinter(fromHost));
-				JavaxPrint.getInstance().print(imgList, JPrint.getInstance().getPreferrePrinter(fromHost));	
+				JavaxPrint.getInstance().print(imgList, printer);
+				JavaxPrint.getInstance().print(imgList, Main.props.getProperty("MISPRINTER"));
+			}	else	{
+				logger.error("Не найден принтер, отмена печати");
+			}	
+		}	else	{
+			//или выбираем принтер по маппингу
+			printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+			if (printer != null)	{
+				logger.info("Печатаю список JPG файлов " + imgList.toString());
+				JavaxPrint.getInstance().print(imgList, printer);
 			}	else	{
 				logger.error("Не найден принтер, отмена печати");
 			}
 		}
+	}
 	
 }
