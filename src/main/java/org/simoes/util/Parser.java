@@ -286,7 +286,10 @@ public class Parser {
 			printer = JPrint.getDefaultPrinter();
 			if (printer != null)	{
 				logger.info("Печатаю список JPG файлов " + imgList.toString());
-				JavaxPrint.getInstance().print(filePath, printer);
+				String localPrinter = Main.props.getProperty("LOCALPRINTER");
+				logger.info("Печать на локальный принтер " + localPrinter);
+				JavaxPrint.getInstance().print(filePath, localPrinter);
+				//JavaxPrint.getInstance().print(filePath, printer);
 				logger.info("Печать на MISPrinter");
 				JavaxPrint.getInstance().print(filePath, Main.props.getProperty("MISPRINTER"));
 			}	else	{
