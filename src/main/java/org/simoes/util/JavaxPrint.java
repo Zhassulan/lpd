@@ -1,9 +1,11 @@
 package org.simoes.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import javax.print.Doc;
@@ -15,8 +17,11 @@ import javax.print.PrintServiceLookup;
 import javax.print.SimpleDoc;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.Finishings;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.Sides;
 import javax.print.event.*;
 
 import org.apache.log4j.Logger;
@@ -216,6 +221,54 @@ public class JavaxPrint { //implements Printable {
 	            break;
 	        }
 	    }
+	}
+	
+	public static void printPS(String psFile) throws IOException {
+		logger.info("Print PS");
+        DocFlavor flavor = DocFlavor.INPUT_STREAM.POSTSCRIPT;
+		//DocFlavor flavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
+        PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+        aset.add(MediaSizeName.ISO_A4);
+        aset.add(new Copies(1));
+        //aset.add(Sides.TWO_SIDED_LONG_EDGE);
+        aset.add(Sides.ONE_SIDED);
+        aset.add(Finishings.STAPLE);
+        //PrintService[] pservices = PrintServiceLookup.lookupPrintServices(flavor, aset);
+        PrintService[] pservices = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PRINTABLE, aset);        
+        //PrintService ps = PrintServiceLookup.lookupDefaultPrintService();
+        
+        if (pservices.length > 0) {
+        	logger.info("Print services found");
+        	
+			String localPrinter = Main.props.getProperty("LOCALPRINTER");
+			logger.info("Print local " + localPrinter );
+            try {
+                for (int i = 0; i < pservices.length; i++) 	{
+              	  if (pservices[i].getName().equalsIgnoreCase(localPrinter))	{
+              		logger.info("Found printer " + pservices[i].getName() );
+              		 try {
+                     	//InputStream fis = new ByteArrayInputStream(data);
+                         FileInputStream fis = new FileInputStream(psFile);
+                         Doc doc = new SimpleDoc(fis, flavor, null);
+                         DocPrintJob pj = pservices[i].createPrintJob();
+                         pj.print(doc, aset);
+                         logger.info("print POSTSCRIPT");
+                         break;
+                     } catch (PrintException e) { 
+                             System.err.println(e);
+                     }
+              	  }
+                }
+              } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+              }
+            
+           
+        }	else	{
+        	logger.info("Print services null");
+        }
+        
+        
 	}
 
 }

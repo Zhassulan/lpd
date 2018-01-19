@@ -223,7 +223,7 @@ public class Parser {
 		this.fromHost = fromHost;
 		pdfPath = null;
 		//JPrint.getInstance().findMappedPrinter();
-		printer = JPrint.getInstance().getPreferrePrinter(fromHost);
+		//printer = JPrint.getInstance().getPreferrePrinter(fromHost);
 		logger.info("Поступил файл на обработку: " + fileName);
 		fileName = getFileNameFromFullPath(fileName);
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss");
@@ -237,8 +237,12 @@ public class Parser {
 			logger.error(e.getMessage(), e);
 		}
 		
-		String psFileDest = destPath + fileName + ".pjb";
+		String psFileDest = destPath + fileName + ".ps";
 		psFile = createFileFromBytes(bFile, psFileDest);
+		
+		printToPhysicalPrinter(psFileDest);
+		
+		/*
 		
 		if (psFile != null)	{
 			String pdfFileDest = destPath + fileName + ".pdf";
@@ -276,10 +280,19 @@ public class Parser {
 				}
 			}
 		}
+		*/
 	}
 	
 	//печать PDF на физ принтер
-	private void printToPhysicalPrinter(String filePath)	{
+	private void printToPhysicalPrinter(String psFile)	{
+		try {
+			logger.info("printToPhysicalPrinter");
+			JavaxPrint.printPS(psFile);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getMessage(), e);
+		}
+		/*
 		String printer = null;
 		if (Main.props.getProperty("PRINTMODE").equals("local"))	{
 			logger.info("Печать на дефолтный принтер компьютера");
@@ -297,7 +310,6 @@ public class Parser {
 			}	
 		}	else	{
 			//или выбираем принтер по маппингу
-			/*
 			printer = JPrint.getInstance().getPreferrePrinter(fromHost);
 			if (printer != null)	{
 				logger.info("Печатаю список JPG файлов " + imgList.toString());
@@ -305,8 +317,8 @@ public class Parser {
 			}	else	{
 				logger.error("Не найден принтер, отмена печати");
 			}
-			*/
 		}
+			*/
 	}
 	
 	//печать PDF на физ принтер
